@@ -10,6 +10,7 @@
 
 </style>
 <body>
+<button class="omg">omg</button>
 <script src="./js/d3.v3.min.js"></script>
 <script src="./js/d3.hexbin.v0.min.js"></script>
 <script>
@@ -19,6 +20,7 @@ var data;
 d3.json("/data/json/generated_data.json", function(error, json) {
     if (error) return console.warn(error);
     data = json;
+    hexify();
 })
 
 var width = 960,
@@ -27,7 +29,8 @@ var width = 960,
     theta = 0,
     dtheta = 0.03,
     n = 2000,
-    k = 20;
+    k = 20,
+    radius = 19.5;
 
 var randomX = d3.random.normal(width / 2, 80),
     randomY = d3.random.normal(height / 2, 80),
@@ -48,14 +51,10 @@ var svg = d3.select("body").append("svg")
 
 var hexagon = svg.append("g")
     .attr("class", "hexagons")
-  .selectAll("path")
-    .data(hexbin(points))
-  .enter().append("path")
-    .attr("d", hexbin.hexagon(19.5))
-    .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
-    .style("fill", function(d) { return color(d.length); });
+    .selectAll("path")
 
-d3.timer(function() {
+function randomizeData(path) {
+  path = path ? path : "/data/json/generated_data.json"
   theta += dtheta;
   randomX = d3.random.normal(width / 2 + 80 * Math.cos(theta), 80),
   randomY = d3.random.normal(height / 2 + 80 * Math.sin(theta), 80);
@@ -72,11 +71,24 @@ d3.timer(function() {
   hexagon.exit().remove();
 
   hexagon.enter().append("path")
-      .attr("d", hexbin.hexagon(19.5))
+      .attr("d", hexbin.hexagon( radius ))
       .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 
   hexagon
       .style("fill", function(d) { return color(d.length) });
-});
+}
+
+function hexify() {
+    hexagon = hexagon
+        .data(hexbin(data), function(d) { return d.i + "," + d.j; });
+    hexagon
+        .enter().append("path")
+        .attr("d", hexbin.hexagon( radius ))
+        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+        .style("fill", function(d) { return color(d.length); });
+}
+
+d3.select("button.omg").on("click", randomizeData)
 
 </script>
+
