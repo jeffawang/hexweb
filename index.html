@@ -4,8 +4,12 @@
 
 .hexagon {
   fill: none;
-  stroke: #000;
+stroke: none;
   stroke-width: .5px;
+}
+
+.animation {
+border: 1px solid #aaaaaa;
 }
 
 </style>
@@ -14,7 +18,9 @@
 
 <body>
 <div class="wrapper">
-    <div class="radius-slider"></div>
+    <div class="hex-radius-slider"></div>
+    <div class="deviation-slider"></div>
+    <div class="ani-radius-slider"></div>
     <button class="omg">omg</button>
 </div>
 <script type="text/javascript" src="./js/d3.v3.min.js"></script>
@@ -31,13 +37,17 @@ d3.json("/data/json/generated_data.json", function(error, json) {
 })
 
 var width = 960,
-    height = 500,
+    height = 700,
     i = -1,
     theta = 0,
     dtheta = 0.03,
     n = 2000,
     k = 20,
-    radius = 19.5;
+    hexRadius = 19.5,
+    deviation = 10,
+    aniRadius = 60,
+    aniCX = width / 2;
+    aniCY = height / 2;
 
 var randomX = d3.random.normal(width / 2, 80),
     randomY = d3.random.normal(height / 2, 80),
@@ -50,9 +60,10 @@ var color = d3.scale.linear()
 
 var hexbin = d3.hexbin()
     .size([width, height])
-    .radius(radius);
+    .radius(hexRadius);
 
 var svg = d3.select(".wrapper").append("svg")
+    .classed("animation", true)
     .attr("width", width)
     .attr("height", height);
 
@@ -63,8 +74,8 @@ var hexagon = svg.append("g")
 function randomizeData(path) {
   path = path ? path : "/data/json/generated_data.json"
   theta += dtheta;
-  randomX = d3.random.normal(width / 2 + 80 * Math.cos(theta), 80),
-  randomY = d3.random.normal(height / 2 + 80 * Math.sin(theta), 80);
+  randomX = d3.random.normal(width / 2 + aniRadius * Math.cos(theta), deviation),
+  randomY = d3.random.normal(height / 2 + aniRadius * Math.sin(theta), deviation);
 
   for (var j = 0; j < k; ++j) {
     i = (i + 1) % n;
@@ -75,6 +86,8 @@ function randomizeData(path) {
 }
 
 function hexify() {
+    
+color.domain([0, d3.max(hexbin(data), function(d) { return d.length } )])
     hexagon = hexagon
         .data(hexbin(data), function(d) { return d.i + "," + d.j; });
     hexagon.exit().remove()
@@ -82,7 +95,7 @@ function hexify() {
         .enter().append("path")
         .classed("hexagon", true)
     hexagon
-        .attr("d", hexbin.hexagon( radius ))
+        .attr("d", hexbin.hexagon( hexRadius ))
         .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
         .style("fill", function(d) { return color(d.length); });
 }
@@ -100,18 +113,37 @@ function clickiness() {
     }
 }
 
-function processSlide(evt, val) {
-    radius = val;
-    hexbin.radius(radius);
+// Sliders
+
+function hexRadiusSlide(evt, val) {
+    hexRadius = val;
+    hexbin.radius(hexRadius);
     hexify();
 }
+hexRadiusSlider = d3.slider()
+    .value(hexRadius)
+    .min(5).max(30)
+    .on("slide", hexRadiusSlide)
+d3.select(".hex-radius-slider").attr("d", "hexRadius").call(hexRadiusSlider)
 
-radiusSlider = d3.slider()
-    .value(radius)
-    .min(5)
-    .max(30)
-    .on("slide", processSlide)
-d3.select(".radius-slider").call(radiusSlider)
+function deviationSlide(evt, val) {
+    deviation = val;
+}
+deviationSlider = d3.slider()
+    .value(deviation)
+    .min(5).max(100)
+    .on("slide", deviationSlide)
+d3.select(".deviation-slider").attr("d", "deviation").call(deviationSlider)
+
+function aniRadiusSlide(evt, val) {
+    aniRadius = val;
+}
+aniRadiusSlider = d3.slider()
+    .value(aniRadius)
+    .min(5).max(height/2)
+    .on("slide", aniRadiusSlide)
+d3.select(".ani-radius-slider").attr("d", "aniRadius").call(aniRadiusSlider)
+
 d3.select("button.omg").on("click", clickiness)
 
 </script>
