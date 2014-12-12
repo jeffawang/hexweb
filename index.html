@@ -9,10 +9,17 @@
 }
 
 </style>
+<link rel="stylesheet" type="text/css" href="style/d3.slider.css" />
+<link rel="stylesheet" type="text/css" href="style/main.css" />
+
 <body>
-<button class="omg">omg</button>
-<script src="./js/d3.v3.min.js"></script>
-<script src="./js/d3.hexbin.v0.min.js"></script>
+<div class="wrapper">
+    <div class="radius-slider"></div>
+    <button class="omg">omg</button>
+</div>
+<script type="text/javascript" src="./js/d3.v3.min.js"></script>
+<script type="text/javascript" src="./js/d3.slider.js"></script>
+<script type="text/javascript" src="./js/d3.hexbin.v0.min.js"></script>
 <script>
 
 var data;
@@ -43,9 +50,9 @@ var color = d3.scale.linear()
 
 var hexbin = d3.hexbin()
     .size([width, height])
-    .radius(20);
+    .radius(radius);
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select(".wrapper").append("svg")
     .attr("width", width)
     .attr("height", height);
 
@@ -61,34 +68,51 @@ function randomizeData(path) {
 
   for (var j = 0; j < k; ++j) {
     i = (i + 1) % n;
-    points[i][0] = randomX();
-    points[i][1] = randomY();
+    data[i][0] = randomX();
+    data[i][1] = randomY();
   }
-
-  hexagon = hexagon
-      .data(hexbin(points), function(d) { return d.i + "," + d.j; });
-
-  hexagon.exit().remove();
-
-  hexagon.enter().append("path")
-      .attr("d", hexbin.hexagon( radius ))
-      .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-
-  hexagon
-      .style("fill", function(d) { return color(d.length) });
+  hexify()
 }
 
 function hexify() {
     hexagon = hexagon
         .data(hexbin(data), function(d) { return d.i + "," + d.j; });
+    hexagon.exit().remove()
     hexagon
         .enter().append("path")
+        .classed("hexagon", true)
+    hexagon
         .attr("d", hexbin.hexagon( radius ))
         .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
         .style("fill", function(d) { return color(d.length); });
 }
 
-d3.select("button.omg").on("click", randomizeData)
+function clickiness() {
+    if (!clickiness.clicked)
+    {
+        clickiness.clicked = true;
+        d3.timer(function() { 
+            randomizeData(); 
+            return !clickiness.clicked;
+        });
+    } else {
+        clickiness.clicked = false;
+    }
+}
+
+function processSlide(evt, val) {
+    radius = val;
+    hexbin.radius(radius);
+    hexify();
+}
+
+radiusSlider = d3.slider()
+    .value(radius)
+    .min(5)
+    .max(30)
+    .on("slide", processSlide)
+d3.select(".radius-slider").call(radiusSlider)
+d3.select("button.omg").on("click", clickiness)
 
 </script>
 
